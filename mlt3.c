@@ -70,7 +70,7 @@ int main()
   }
 
   // Put the text in the vector
-  size_t bytes_lidos = fread(file_char_data, 1, text_file_size, file);
+  int64_t bytes_lidos = fread(file_char_data, 1, text_file_size, file);
   if (bytes_lidos != text_file_size)
   {
       perror("Error reading the file");
@@ -84,7 +84,8 @@ int main()
   for (int64_t i = 0; i < text_file_size-1; i++) // -1 (last is LF)
     printf("%c", (file_char_data[i]));  // each char
 
-  // Allocate bin vector for the text
+
+  // Allocate bin vector for the bin vector
   bool *bin_data = (bool*)malloc(sizeof(bool)*text_file_size); // bool has 1Byte 
   if (bin_data == NULL)
   {
@@ -108,6 +109,7 @@ int main()
   for(int64_t i=0; i<data_pos_cont; i++)
     printf("%d ", bin_data[i]);
   
+  
   // Print data after MLT-3 transformation
   printf("\n\nMLT-3:\n");
   int8_t *mlt3_data = mlt3(bin_data, data_pos_cont);
@@ -119,8 +121,8 @@ int main()
   free(mlt3_data);
 
 
-  printf("\n\nstd bool type size: %d byte\n", sizeof(bool));
-  printf("text size: %d bits\n", data_pos_cont);
+  // printf("\n\nstd bool type size: %d byte\n", sizeof(bool));
+  // printf("text size: %d bits\n", data_pos_cont);
 
 
   return 0;
