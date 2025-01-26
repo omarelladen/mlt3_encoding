@@ -48,10 +48,10 @@ int8_t* mlt3(bool data[], int64_t data_size)
 int main()
 {
   // Open text file
-  FILE *file = fopen("texto.txt", "r"); // windows may need rb
+  FILE *file = fopen("message.txt", "r"); // windows may need rb
   if (file == NULL)
   {
-      perror("Error opening the file");
+      perror("Error opening the message.txt file");
       return 1;
   }
 
@@ -106,20 +106,40 @@ int main()
 
   // Print binary data
   printf("\n\nData:\n");
+  int64_t cont_8=0;
   for(int64_t i=0; i<data_pos_cont; i++)
+  {
     printf("%d ", bin_data[i]);
+
+    if(cont_8++ == 7)
+    {
+      printf("   ");
+      cont_8 = 0;
+    }
+  }
   
   
   // Print data after MLT-3 transformation
   printf("\n\nMLT-3:\n");
+  cont_8=0;
   int8_t *mlt3_data = mlt3(bin_data, data_pos_cont);
   for(int64_t i=0; i<data_pos_cont; i++)
+  {
     printf("%d ", mlt3_data[i]);
+
+     if(cont_8++ == 7)
+    {
+      printf("   ");
+      cont_8 = 0;
+    }
+  }
+  
 
 
   free(bin_data);
   free(mlt3_data);
 
+  printf("\n");
 
   // printf("\n\nstd bool type size: %d byte\n", sizeof(bool));
   // printf("text size: %d bits\n", data_pos_cont);
