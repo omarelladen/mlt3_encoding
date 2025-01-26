@@ -1,10 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <stdbool.h>
 
-// Return the data after MLT-3 transformation
-int8_t* mlt3(bool data[], int64_t data_size)
+// Return the data after MLT-3 encoding
+int8_t* mlt3(int8_t data[], int64_t data_size)
 {
   // Allocate vector for the mlt3
   int8_t *mlt3_data = (int8_t*)malloc(data_size * sizeof(int8_t));
@@ -14,33 +13,31 @@ int8_t* mlt3(bool data[], int64_t data_size)
       exit(1);
   }
 
-  // First output is the same
-  int8_t data_out = data[0];  
-  mlt3_data[0] = data_out;
+  // First output signal is the same
+  int8_t signal_out = data[0];  
+  mlt3_data[0] = signal_out;
 
   // Sign initalization
   int8_t sign = -1; 
-  if(data_out == 1)
+  if(signal_out == 1)
     sign = 1;
 
-  // MLT-3
+  // MLT-3 encoding to mlt3_data
   for(int64_t i=1; i<data_size; i++)
   {
-    if(data_out != 0 && data[i] == 1)
-      data_out = 0;
-    else if(data_out == 0 && data[i] == 1)
+    // Check current data and last signal to get the next signal value
+    if(data[i] == 1)  
     {
-      sign *= -1;
-      data_out = sign;
+      if(signal_out == 0)
+      {    
+        sign *= -1;
+        signal_out = sign;
+      }
+      else
+        signal_out = 0;
     }
-    // else if(data[i] == 0)
-    // {
-    //   //data_out = data_out;
-    // }
-
-    mlt3_data[i] = data_out;
+    mlt3_data[i] = signal_out;
   }
-
 
   return mlt3_data;
 }
@@ -60,8 +57,11 @@ int main()
   int64_t text_file_size = ftell(file); //in bytes (with LF)
   fseek(file, 0, SEEK_SET); // return to the beggining of the file
 
+  int64_t bin_data_size = text_file_size * 8; // binary data will be using int8_t to represent the boolean values
+
+
   // Allocate vector for the text
-  unsigned char *file_char_data = malloc(text_file_size);
+  unsigned char *file_char_data = (unsigned char*)malloc(text_file_size * sizeof(unsigned char));
   if (file_char_data == NULL)
   {
       perror("Error allocating memmory for file content");
@@ -86,7 +86,7 @@ int main()
 
 
   // Allocate bin vector for the bin vector
-  bool *bin_data = (bool*)malloc(sizeof(bool)*text_file_size); // bool has 1Byte 
+  int8_t *bin_data = (int8_t*)malloc(sizeof(int8_t) * bin_data_size);
   if (bin_data == NULL)
   {
       perror("Error allocating memmory for bin data");
@@ -117,12 +117,12 @@ int main()
       cont_8 = 0;
     }
   }
-  
-  
-  // Print data after MLT-3 transformation
+
+
+  // Print data after MLT-3 encoding
   printf("\n\nMLT-3:\n");
   cont_8=0;
-  int8_t *mlt3_data = mlt3(bin_data, data_pos_cont);
+  int8_t *mlt3_data = mlt3(bin_data, bin_data_size);
   for(int64_t i=0; i<data_pos_cont; i++)
   {
     printf("%d ", mlt3_data[i]);
@@ -135,15 +135,10 @@ int main()
   }
   
 
-
   free(bin_data);
   free(mlt3_data);
 
   printf("\n");
-
-  // printf("\n\nstd bool type size: %d byte\n", sizeof(bool));
-  // printf("text size: %d bits\n", data_pos_cont);
-
 
   return 0;
 }
