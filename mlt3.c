@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 // Return the data after MLT-3 encoding
-int8_t* mlt3(int8_t data[], int64_t data_size)
+int8_t* mlt3(bool data[], int64_t data_size)
 {
   // Allocate vector for the mlt3
   int8_t *mlt3_data = (int8_t*)malloc(data_size * sizeof(int8_t));
@@ -57,7 +58,7 @@ int main()
   int64_t text_file_size = ftell(file); //in bytes (with LF)
   fseek(file, 0, SEEK_SET); // return to the beggining of the file
 
-  int64_t bin_data_size = text_file_size * 8; // binary data will be using int8_t to represent the boolean values
+  int64_t bin_data_size = text_file_size * 8; // 8 bool for each char (1 Byte)
 
 
   // Allocate vector for the text
@@ -86,7 +87,7 @@ int main()
 
 
   // Allocate bin vector for the bin vector
-  int8_t *bin_data = (int8_t*)malloc(sizeof(int8_t) * bin_data_size);
+  bool *bin_data = (bool*)malloc(sizeof(int8_t) * bin_data_size);
   if (bin_data == NULL)
   {
       perror("Error allocating memmory for bin data");
