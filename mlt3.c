@@ -1,66 +1,127 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <stdlib.h> 
 
-#define DATA_MAX_SIZE 11
-
-int8_t* mlt3(bool signal[])
+// Return the data after MLT-3 transformation
+int8_t* mlt3(bool data[], int64_t data_size)
 {
-  int8_t *mlt3_data = (int8_t*)malloc(DATA_MAX_SIZE * sizeof(int8_t));
-
-  if (mlt3_data == NULL) {
-      printf("malloc error\n");
+  // Allocate vector for the mlt3
+  int8_t *mlt3_data = (int8_t*)malloc(data_size * sizeof(int8_t));
+  if (mlt3_data == NULL)
+  {
+      printf("Error allocating memmory for mlt3\n");
       exit(1);
   }
 
-  int8_t data_out_ant = signal[0];  
-  mlt3_data[0] = data_out_ant;
+  // First output is the same
+  int8_t data_out = data[0];  
+  mlt3_data[0] = data_out;
 
+  // Sign initalization
   int8_t sign = -1; 
-  if(data_out_ant == 1)
+  if(data_out == 1)
     sign = 1;
 
-  for(int64_t i=1; i<DATA_MAX_SIZE; i++)
+  // MLT-3
+  for(int64_t i=1; i<data_size; i++)
   {
-    if(signal[i] == 0)
-    {
-      //data_out_ant = data_out_ant;
-    }
-    else if(data_out_ant != 0 && signal[i] == 1)
-    {
-      data_out_ant = 0;
-    }
-    else if(data_out_ant == 0 && signal[i] == 1)
+    if(data_out != 0 && data[i] == 1)
+      data_out = 0;
+    else if(data_out == 0 && data[i] == 1)
     {
       sign *= -1;
-      data_out_ant = sign;
+      data_out = sign;
     }
+    // else if(data[i] == 0)
+    // {
+    //   //data_out = data_out;
+    // }
 
-    mlt3_data[i] = data_out_ant;
+    mlt3_data[i] = data_out;
   }
+
 
   return mlt3_data;
 }
+
 int main()
 {
-  bool signal[DATA_MAX_SIZE] = {0,1,0,0,1,1,1,0,0,1,1};
-  int64_t data_size = sizeof(signal) / sizeof(signal[0]);
-  printf("size: %d\n", data_size);
-  for(int64_t i=0; i<data_size; i++)
-    printf("%d ", signal[i]);
+  // Open text file
+  FILE *file = fopen("texto.txt", "r"); // windows may need rb
+  if (file == NULL)
+  {
+      perror("Error opening the file");
+      return 1;
+  }
 
-  printf("\n");
+  // Get file size 
+  fseek(file, 0, SEEK_END);
+  int64_t text_file_size = ftell(file); //in bytes (with LF)
+  fseek(file, 0, SEEK_SET); // return to the beggining of the file
 
-  int8_t *mlt3_data = mlt3(signal);
-  for(int64_t i=0; i<data_size; i++)
+  // Allocate vector for the text
+  unsigned char *file_char_data = malloc(text_file_size);
+  if (file_char_data == NULL)
+  {
+      perror("Error allocating memmory for file content");
+      fclose(file);
+      return 1;
+  }
+
+  // Put the text in the vector
+  size_t bytes_lidos = fread(file_char_data, 1, text_file_size, file);
+  if (bytes_lidos != text_file_size)
+  {
+      perror("Error reading the file");
+      free(file_char_data);
+      fclose(file);
+      return 1;
+  }
+
+  // Print vector content
+  printf("File text without LF:\n");
+  for (int64_t i = 0; i < text_file_size-1; i++) // -1 (last is LF)
+    printf("%c", (file_char_data[i]));  // each char
+
+  // Allocate bin vector for the text
+  bool *bin_data = (bool*)malloc(sizeof(bool)*text_file_size); // bool has 1Byte 
+  if (bin_data == NULL)
+  {
+      perror("Error allocating memmory for bin data");
+      fclose(file);
+      return 1;
+  }
+
+  // Put the data in binary
+  int64_t data_pos_cont=0;
+  for (int64_t i = 0; i < text_file_size-1/*last byte is LF*/; i++) // each char (byte)
+    for (int8_t j = 7; j >= 0; j--) // each bit in the byte
+      bin_data[data_pos_cont++] = (file_char_data[i] >> j) & 1;
+
+  // rm original data
+  free(file_char_data);
+  fclose(file);
+
+  // Print binary data
+  printf("\n\nData:\n");
+  for(int64_t i=0; i<data_pos_cont; i++)
+    printf("%d ", bin_data[i]);
+  
+  // Print data after MLT-3 transformation
+  printf("\n\nMLT-3:\n");
+  int8_t *mlt3_data = mlt3(bin_data, data_pos_cont);
+  for(int64_t i=0; i<data_pos_cont; i++)
     printf("%d ", mlt3_data[i]);
 
 
+  free(bin_data);
   free(mlt3_data);
 
 
-  printf("\n\nOmar El Laden\n");
+  printf("\n\nstd bool type size: %d byte\n", sizeof(bool));
+  printf("text size: %d bits\n", data_pos_cont);
+
+
   return 0;
-  
 }
