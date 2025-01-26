@@ -80,7 +80,7 @@ int main()
   }
 
   // Print vector content
-  printf("File text without LF:\n");
+  printf("Text:\n");
   for (int64_t i = 0; i < text_file_size-1; i++) // -1 (last is LF)
     printf("%c", (file_char_data[i]));  // each char
 
@@ -96,7 +96,7 @@ int main()
 
   // Put the data in binary
   int64_t data_pos_cont=0;
-  for (int64_t i = 0; i < text_file_size-1/*last byte is LF*/; i++) // each char (byte)
+  for (int64_t i = 0; i < text_file_size; i++) // each char (byte)
     for (int8_t j = 7; j >= 0; j--) // each bit in the byte
       bin_data[data_pos_cont++] = (file_char_data[i] >> j) & 1;
 
