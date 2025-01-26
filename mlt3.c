@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 // Return the data after MLT-3 encoding
-int8_t* mlt3(bool data[], int64_t data_size)
+int8_t* mlt3(const bool data[], uint64_t data_size)
 {
   // Allocate vector for the mlt3
   int8_t *mlt3_data = (int8_t*)malloc(data_size * sizeof(int8_t));
@@ -24,7 +24,7 @@ int8_t* mlt3(bool data[], int64_t data_size)
     sign = 1;
 
   // MLT-3 encoding to mlt3_data
-  for(int64_t i=1; i<data_size; i++)
+  for(uint64_t i=1; i < data_size; i++)
   {
     // Check current data and last signal to get the next signal value
     if(data[i] == 1)  
@@ -55,10 +55,16 @@ int main()
 
   // Get file size 
   fseek(file, 0, SEEK_END);
-  int64_t text_file_size = ftell(file); //in bytes (with LF)
+  const int64_t text_file_size = ftell(file); // in bytes (with LF)
+  if(text_file_size == -1)
+  {
+    perror("Error with ftell()");
+    fclose(file);
+    return 1;
+  }
   fseek(file, 0, SEEK_SET); // return to the beggining of the file
 
-  int64_t bin_data_size = text_file_size * 8; // 8 bool for each char (1 Byte)
+  const uint64_t bin_data_size = text_file_size * 8; // 8 bool for each char (1 Byte)
 
 
   // Allocate vector for the text
@@ -71,8 +77,8 @@ int main()
   }
 
   // Put the text in the vector
-  int64_t bytes_lidos = fread(file_char_data, 1, text_file_size, file);
-  if (bytes_lidos != text_file_size)
+  int64_t bytes_read= fread(file_char_data, 1, text_file_size, file);
+  if (bytes_read != text_file_size)
   {
       perror("Error reading the file");
       free(file_char_data);
@@ -96,9 +102,9 @@ int main()
   }
 
   // Put the data in binary
-  int64_t data_pos_cont=0;
-  for (int64_t i = 0; i < text_file_size; i++) // each char (byte)
-    for (int8_t j = 7; j >= 0; j--) // each bit in the byte
+  uint64_t data_pos_cont=0;
+  for (int64_t i=0; i < text_file_size; i++) // each char (byte)
+    for (int8_t j=7; j >= 0; j--) // each bit in the byte
       bin_data[data_pos_cont++] = (file_char_data[i] >> j) & 1;
 
   // rm original data
@@ -108,7 +114,7 @@ int main()
   // Print binary data
   printf("\n\nData:\n");
   int64_t cont_8=0;
-  for(int64_t i=0; i<data_pos_cont; i++)
+  for(uint64_t i=0; i < data_pos_cont; i++)
   {
     printf("%d ", bin_data[i]);
 
@@ -124,7 +130,12 @@ int main()
   printf("\n\nMLT-3:\n");
   cont_8=0;
   int8_t *mlt3_data = mlt3(bin_data, bin_data_size);
-  for(int64_t i=0; i<data_pos_cont; i++)
+  if(mlt3_data == NULL)
+  {
+      printf("Error: mlt3_data NULL ptr \n");
+      exit(1);
+  }
+  for(uint64_t i=0; i < data_pos_cont; i++)
   {
     printf("%d ", mlt3_data[i]);
 
