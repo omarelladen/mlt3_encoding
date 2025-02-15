@@ -3,20 +3,18 @@ import json
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+
 def read_file(file_name: str) -> str:
     with open(file_name, 'r') as file:
         message = file.read()
     return message
 
-
 def encode_bit(input: str) -> list:
     output = []
     for char in input:
         bits = bin(ord(char))[2:].zfill(8)
-        output.extend([int(bit) for bit in bits])
-        
+        output.extend([int(bit) for bit in bits])   
     return output
-
 
 def encode_mlt3(input: list) -> list:    
     mlt3_data = []
@@ -43,34 +41,56 @@ def encode_mlt3(input: list) -> list:
 
     return mlt3_data
 
+# RSA caracter por caracter
+def encrypt_rsa(message, public_key):
+    e, n = public_key
+    encrypted_message = [pow(ord(char), e, n) for char in message] #c^e mod n
+    return encrypted_message
 
-def encrypt(input: list) -> list:
-    output = input
+def get_public_key():
+    response = requests.post('http://localhost:8080/send_public_key', json={})
+    response_data = response.json()
+    public_key = tuple(response_data['public_key'])
+    return public_key
+
+def convert_to_binary(encrypted_message):
+    binary_bits = []
+    for num in encrypted_message:
+        # Converte o número criptografado em binário e adiciona cada bit à lista
+        bits = bin(num)[2:].zfill(16)  # Zera até 16 bits (ou ajuste conforme necessário)
+        binary_bits.extend([int(bit) for bit in bits])  # Adiciona cada bit individualmente na lista
+    return binary_bits
     
-    # TODO: Implement encryption algorithm
-    
-    return output
-
-
 def encode(message_file='message.txt') -> list:
+    public_key = get_public_key()
+
+
     string_message = read_file(message_file)
+    print('\nMessage:\n', string_message)
 
     bit_message = encode_bit(string_message)
-    print('\nEncode(Bit): \n\t* encoded:', bit_message ,'\n\t* decoded:', string_message)
+    print('\n*Message -> Bin:\n', bit_message)
 
-    encrypt_message = encrypt(bit_message)
-    print('\nEncrypt: \n\t* encrypted:', encrypt_message ,'\n\t* decrypted:', bit_message)
+    encrypted_message = encrypt_rsa(string_message, public_key)
+    print('\n(TODO em ASCII estendido)Message -> Encrypted:\n', encrypted_message)
 
-    mlt3_message = encode_mlt3(encrypt_message)
-    print('\nEncode(MLT3): \n\t* encoded:', mlt3_message ,'\n\t* decoded:', encrypt_message)
+    binary_encrypted_message = convert_to_binary(encrypted_message)
+    print('\nMessage -> Encrypted -> Bin:\n', binary_encrypted_message)
 
+    mlt3_message = encode_mlt3(binary_encrypted_message)
+    print('\nMessage -> Encrypted -> Bin -> MLT-3 Encoded:\n', mlt3_message)
 
-    requests.post('http://localhost:8080', data=json.dumps(mlt3_message), headers={'Content-Type': 'application/json'})
-    plot(string_message, bit_message, mlt3_message)
+    print('\n(TODO)MLT-3 Plot:\n')
+    #plot(string_message, bit_message, mlt3_message)
 
     return mlt3_message
 
-#-----------------------------------------------------------
+
+def send_encrypted_message_to_server(encrypted_message):
+    response = requests.post('http://localhost:8080/receive_encrypted', data=json.dumps(encrypted_message), headers={'Content-Type': 'application/json'})
+    print('Response from server:', response.json())
+
+
 def plot(string_input: str, bit_input: list, mlt3_input: list):
     fig, axs = plt.subplots(3, 1, figsize=(10, 6))
 
@@ -93,5 +113,7 @@ def plot(string_input: str, bit_input: list, mlt3_input: list):
     plt.tight_layout()
     plt.show()
 
+
 if __name__ == "__main__":
-    encode()
+    mlt3_message = encode()
+    send_encrypted_message_to_server(mlt3_message)
