@@ -18,11 +18,11 @@ def read_file(file_path: str) -> str:
     return message
 
 def encode_mlt3(input: list) -> list:    
-    mlt3_data = []
+    output = []
 
-    # First output signal is the same
+    # First output signal is the same as the input
     signal_out = input[0]
-    mlt3_data.append(signal_out)
+    output.append(signal_out)
 
     # Sign initialization
     if signal_out == 1:
@@ -30,7 +30,6 @@ def encode_mlt3(input: list) -> list:
     else:
         sign = -1
 
-    # MLT-3 encoding
     for i in range(1, len(input)):
         if input[i] == 1:
             if signal_out == 0:
@@ -38,9 +37,9 @@ def encode_mlt3(input: list) -> list:
                 signal_out = sign
             else:
                 signal_out = 0
-        mlt3_data.append(signal_out)
+        output.append(signal_out)
 
-    return mlt3_data
+    return output
 
 def str_to_bin(input: str, n_bits: int) -> list: #Unicode
     output = []
@@ -78,7 +77,7 @@ def plot_signal(signal):
     plt.ion()
     
     t = list(range(len(signal)))
-    plt.plot(t, signal, drawstyle='steps-post')
+    plt.plot(t, signal, drawstyle='steps-post')  # 'steps-post': square wave
     plt.title("MLT-3")
     plt.xlabel("time (s)")
     plt.grid(True)
@@ -87,8 +86,8 @@ def plot_signal(signal):
     plt.pause(0.1)
     plt.ioff()
 
-def send_encrypted_message_to_server(encrypted_message):
-    response = requests.post('http://localhost:8080/receive_encrypted', data=json.dumps(encrypted_message), headers={'Content-Type': 'application/json'})
+def send_message_to_server(message):
+    response = requests.post('http://localhost:8080/receive_encrypted', data=json.dumps(message), headers={'Content-Type': 'application/json'})
     print('Response from server:', response.json())
 
 def encode(message_file_path='message.txt') -> list:
@@ -112,10 +111,11 @@ def encode(message_file_path='message.txt') -> list:
     mlt3_message = encode_mlt3(binary_encrypted_message)
     print('\nMessage -> Encrypted -> Bin -> MLT-3 Encoded:\n', mlt3_message)
 
+    print('\n', end='')
     plot_signal(mlt3_message)
 
     return mlt3_message
 
 if __name__ == "__main__":
-    mlt3_message = encode()
-    send_encrypted_message_to_server(mlt3_message)
+    mlt3_message = encode('message.txt')
+    send_message_to_server(mlt3_message)

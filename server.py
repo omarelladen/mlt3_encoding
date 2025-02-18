@@ -21,11 +21,12 @@ def generate_rsa_keys(bits: int =8) -> tuple:
                 return x
         return None
 
-    # Generate f2 prime numbers p and q
+    # Generate 2 prime numbers p and q
     p=0
     while (not is_prime(p) or p < 200):
         p = random.getrandbits(bits)
     print('\np:', p)
+
     q=0
     while (not is_prime(q) or p == q or q < 200):
         q = random.getrandbits(bits)
@@ -33,16 +34,13 @@ def generate_rsa_keys(bits: int =8) -> tuple:
     
     n = p * q
 
-    # Calculate phi(n)
     phi_n = (p - 1) * (q - 1)
     
-    # Choose e (usually a small number that is corpime with phi(n))
-    e = 65537
+    e = 65537 # e is usually a small number that is corpime with phi(n)
     while gcd(e, phi_n) != 1:
         e = random.randrange(2, phi_n)
-    
-    # Calculate d such that (d * e) % phi(n) = 1
-    d = mod_inverse(e, phi_n)
+
+    d = mod_inverse(e, phi_n) #(d * e) % phi(n) = 1
     
     # Return the public key (e, n) and the private key (d, n)
     return ((e, n), (d, n))
@@ -51,7 +49,7 @@ def plot_signal(signal):
     plt.ion()
     
     t = list(range(len(signal)))
-    plt.plot(t, signal, drawstyle='steps-post')
+    plt.plot(t, signal, drawstyle='steps-post') # 'steps-post': square wave
     plt.title("MLT-3")
     plt.xlabel("time (s)")
     plt.grid(True)
@@ -61,11 +59,11 @@ def plot_signal(signal):
     plt.ioff()
 
 def decode_mlt3(input: list) -> list:
-    mlt3_data = []
+    output = []
 
-    # First output signal is the same
+    # First output signal is the same as the input
     signal_out = input[0]
-    mlt3_data.append(signal_out)
+    output.append(signal_out)
 
     # Sign initialization
     if signal_out == 1:
@@ -73,15 +71,14 @@ def decode_mlt3(input: list) -> list:
     else:
         sign = -1
 
-    # MLT-3 decoding
     for i in range(1, len(input)):
         if input[i] == input[i-1]:
             signal_out = 0
         else:
             signal_out = 1
-        mlt3_data.append(signal_out)
+        output.append(signal_out)
 
-    return mlt3_data
+    return output
 
 def bin_to_num(input: list, bits_per_number: int =16) -> list:
     encrypted_message = []
@@ -117,13 +114,13 @@ def decode(mlt3_message: list):
     print('\nRecieved -> MLT-3 Decoded:\n', encrypted_message)
 
     encrypted_message_from_bits = bin_to_num(encrypted_message)
-    print('\nRecieved -> MLT-3 Decoded -> DeBin:\n', encrypted_message_from_bits)
+    print('\nRecieved -> MLT-3 Decoded -> Num:\n', encrypted_message_from_bits)
 
     bit_message = decrypt_rsa(encrypted_message_from_bits, private_key)
-    print('\nRecieved -> MLT-3 Decoded -> DeBin -> Decrypted:\n', bit_message)
+    print('\nRecieved -> MLT-3 Decoded -> Num -> Decrypted:\n', bit_message)
 
     msg_bin_decrypt = str_to_bin(bit_message)
-    print('\nRecieved -> MLT-3 Decoded -> DeBin -> Decrypted -> Bin:\n', msg_bin_decrypt)
+    print('\nRecieved -> MLT-3 Decoded -> Num -> Decrypted -> Bin:\n', msg_bin_decrypt)
 
     write_file('decoded_message.txt', bit_message)
 
