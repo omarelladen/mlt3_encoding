@@ -1,26 +1,27 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
-import json
-import seaborn as sns
 import matplotlib.pyplot as plt
-import random
+import seaborn as sns
 from math import gcd
-def is_prime(n):
-    if n <= 1:
-        return False
-    for i in range(2, int(n ** 0.5) + 1):
-        if n % i == 0:
+import random
+import json
+
+
+def generate_rsa_keys(bits: int =8) -> tuple:
+    def is_prime(n: int) -> bool:
+        if n <= 1:
             return False
-    return True
+        for i in range(2, int(n ** 0.5) + 1):
+            if n % i == 0:
+                return False
+        return True
 
-def mod_inverse(a, m):
-    for x in range(1, m):
-        if (a * x) % m == 1:
-            return x
-    return None
+    def mod_inverse(a: int, m: int) -> int:
+        for x in range(1, m):
+            if (a * x) % m == 1:
+                return x
+        return None
 
-def generate_rsa_keys(bits=8):
-
-    # Gerar dois num primos p e q
+    # Generate f2 prime numbers p and q
     p=0
     while (not is_prime(p) or p < 200):
         p = random.getrandbits(bits)
@@ -32,38 +33,32 @@ def generate_rsa_keys(bits=8):
     
     n = p * q
 
-    # Calcular phi(n)
+    # Calculate phi(n)
     phi_n = (p - 1) * (q - 1)
     
-    # Escolher e (geralmente um pequeno número coprimo com phi(n))
+    # Choose e (usually a small number that is corpime with phi(n))
     e = 65537
     while gcd(e, phi_n) != 1:
         e = random.randrange(2, phi_n)
     
-    # Calcular d tal que (d * e) % phi(n) = 1
+    # Calculate d such that (d * e) % phi(n) = 1
     d = mod_inverse(e, phi_n)
     
-    # Retornar chave pública (e, n) e chave privada (d, n)
+    # Return the public key (e, n) and the private key (d, n)
     return ((e, n), (d, n))
 
-def write_file(file_name: str, content: str):
-    with open(file_name, 'w') as file:
-        file.write(content)
+def plot_signal(signal):
+    plt.ion()
+    
+    t = list(range(len(signal)))
+    plt.plot(t, signal, drawstyle='steps-post')
+    plt.title("MLT-3")
+    plt.xlabel("time (s)")
+    plt.grid(True)
+    plt.show()
 
-def decode_bit(input: list) -> str:
-    # Verifica se a entrada tem apenas 0s e 1s
-    if not all(bit in [0, 1] for bit in input):
-        raise ValueError("Input contains non-binary values")
-
-    # Ajusta o comprimento para ser múltiplo de 8, caso necessário
-    if len(input) % 8 != 0:
-        padding = 8 - (len(input) % 8)
-        input.extend([0] * padding)  # Adiciona 0s para completar o último byte
-
-    # Converte a lista de bits em uma string de caracteres
-    output = ''.join([chr(int(''.join(map(str, input[i:i+8])), 2)) for i in range(0, len(input), 8)])
-
-    return output
+    plt.pause(0.1)
+    plt.ioff()
 
 def decode_mlt3(input: list) -> list:
     mlt3_data = []
@@ -88,68 +83,56 @@ def decode_mlt3(input: list) -> list:
 
     return mlt3_data
 
-# RSA caracter por caracter
-def decrypt_rsa(encrypted_message, private_key):
+def bin_to_num(input: list, bits_per_number: int =16) -> list:
+    encrypted_message = []
+    for i in range(0, len(input), bits_per_number):
+        bit_segment = input[i:i+bits_per_number]
+        num = int(''.join(map(str, bit_segment)), 2)
+        encrypted_message.append(num)
+    return encrypted_message
+    
+# RSA character by character
+def decrypt_rsa(encrypted_message: list, private_key: tuple) -> str:
     d, n = private_key
     decrypted_message = ''.join([chr(pow(char, d, n)) for char in encrypted_message]) #c^d mod n
     return decrypted_message
 
-def encode_bit(input: str) -> list:
+def str_to_bin(input: str) -> list:
     output = []
     for char in input:
         bits = bin(ord(char))[2:].zfill(8)
         output.extend([int(bit) for bit in bits])   
     return output
 
-def convert_bits_to_numbers(binary_bits, bits_per_number=16):
-    encrypted_message = []
-    for i in range(0, len(binary_bits), bits_per_number):
-        bit_segment = binary_bits[i:i+bits_per_number]
-        # Converte o segmento de bits de volta para um número inteiro
-        num = int(''.join(map(str, bit_segment)), 2)
-        encrypted_message.append(num)
-    return encrypted_message
+def write_file(file_path: str, content: str):
+    with open(file_path, 'w') as file:
+        file.write(content)
 
 def decode(mlt3_message: list):
     print('\nRecieved (Message -> Encrypted -> Bin -> MLT-3 Encoded):\n', mlt3_message)
     
-    print('\nMLT-3 Plot:\n')
     plot_signal(mlt3_message)
 
     encrypted_message = decode_mlt3(mlt3_message)
     print('\nRecieved -> MLT-3 Decoded:\n', encrypted_message)
 
-    encrypted_message_from_bits = convert_bits_to_numbers(encrypted_message)
+    encrypted_message_from_bits = bin_to_num(encrypted_message)
     print('\nRecieved -> MLT-3 Decoded -> DeBin:\n', encrypted_message_from_bits)
 
     bit_message = decrypt_rsa(encrypted_message_from_bits, private_key)
     print('\nRecieved -> MLT-3 Decoded -> DeBin -> Decrypted:\n', bit_message)
 
-    msg_bin_decrypt = encode_bit(bit_message)
-    print('\n*Recieved -> MLT-3 Decoded -> DeBin -> Decrypted -> Bin:\n', msg_bin_decrypt)
+    msg_bin_decrypt = str_to_bin(bit_message)
+    print('\nRecieved -> MLT-3 Decoded -> DeBin -> Decrypted -> Bin:\n', msg_bin_decrypt)
 
     write_file('decoded_message.txt', bit_message)
-
-def plot_signal(signal):
-    plt.ion()
-    
-    t = list(range(len(signal)))
-    plt.plot(t, signal, drawstyle='steps-post')
-    plt.title("MLT-3")
-    plt.xlabel("time (s)")
-    plt.grid(True)
-    plt.show()
-
-    plt.pause(0.1)
-    plt.ioff()
-
 
 class SimpleRouter(BaseHTTPRequestHandler):
     def do_POST(self):
         content_length = int(self.headers['Content-Length'])
         data = json.loads(self.rfile.read(content_length).decode('utf-8'))
 
-        # Endpoint que envia a chave pública
+        # Endpoint to send the public key
         if self.path == '/send_public_key':
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
@@ -159,7 +142,7 @@ class SimpleRouter(BaseHTTPRequestHandler):
             }
             self.wfile.write(json.dumps(response).encode('utf-8'))
 
-        # Endpoint para receber a mensagem criptografada
+        # Endpoint to receive the encrypted message
         elif self.path == '/receive_encrypted':
             encrypted_data = data
             self.send_response(200)
@@ -175,7 +158,7 @@ class SimpleRouter(BaseHTTPRequestHandler):
 def run_server():
     server_address = ("", 8080)
     httpd = HTTPServer(server_address, SimpleRouter)
-    print("Serving on port 8080")
+    print(f"Serving on port {server_address[1]}")
     httpd.serve_forever()
     
 
