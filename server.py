@@ -11,33 +11,49 @@ def write_file(file_name: str, content: str):
 def decode_bit(input: list) -> str:
     output = ''.join([chr(int(''.join(map(str, input[i:i+8])), 2)) for i in range(0, len(input), 8)])
 
-    print('\nDecode(Bit): \n\t* encoded:', input ,'\n\t* decoded:', output)
-
     return output
 
 
 def decode_mlt3(input: list) -> list:
-    output = input
-    
-    # TODO: Implement MLT-3 decoding algorithm
+    mlt3_data = []
 
-    print('\nDecode(MLT3): \n\t* encoded:', input ,'\n\t* decoded:', output)
+    # First output signal is the same
+    signal_out = input[0]
+    mlt3_data.append(signal_out)
 
-    return output
+    # Sign initialization
+    if signal_out == 1:
+        sign = 1
+    else:
+        sign = -1
+
+    # MLT-3 decoding
+    for i in range(1, len(input)):
+        if input[i] == input[i-1]:
+            signal_out = 0
+        else:
+            signal_out = 1
+        mlt3_data.append(signal_out)
+
+    return mlt3_data
 
 def decrypt(input: list) -> list:
     output = input
     
     # TODO: Implement decryption algorithm
 
-    print('\Decrypt: \n\t* encoded:', input ,'\n\t* decoded:', output)
-
     return output
 
 def decode(mlt3_message: list):
     encrypt_message = decode_mlt3(mlt3_message)
+    print('\nDecode(MLT3): \n\t* encoded:', mlt3_message ,'\n\t* decoded:', encrypt_message)
+
     bit_message = decrypt(encrypt_message)
+    print('\nDecrypt: \n\t* encoded:', encrypt_message ,'\n\t* decoded:', bit_message)
+
     string_message = decode_bit(bit_message)
+    print('\nDecode(Bit): \n\t* encoded:', bit_message ,'\n\t* decoded:', string_message)
+
     write_file('decoded_message.txt', string_message)
     plot(string_message, bit_message, mlt3_message)
 
