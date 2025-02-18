@@ -2,6 +2,8 @@ import requests
 import json
 import seaborn as sns
 import matplotlib.pyplot as plt
+from requests_futures.sessions import FuturesSession
+
 
 def read_file(file_name: str) -> str:
     with open(file_name, 'r') as file:
@@ -45,7 +47,12 @@ def encode(message_file='message.txt') -> list:
     bit_message = encode_bit(string_message)
     encrypt_message = encrypt(bit_message)
     mlt3_message = encode_mlt3(encrypt_message)
-    requests.post('http://localhost:8080', data=json.dumps(mlt3_message), headers={'Content-Type': 'application/json'})
+    session = FuturesSession()
+    session.post(
+        'http://localhost:8080',
+        data=json.dumps(mlt3_message),
+        headers={'Content-Type': 'application/json'}
+    )
     plot(string_message, bit_message, mlt3_message)
     return mlt3_message
 
