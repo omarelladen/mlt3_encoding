@@ -4,7 +4,6 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import random
 from math import gcd
-
 def is_prime(n):
     if n <= 1:
         return False
@@ -114,14 +113,14 @@ def convert_bits_to_numbers(binary_bits, bits_per_number=16):
 def decode(mlt3_message: list):
     print('\nRecieved (Message -> Encrypted -> Bin -> MLT-3 Encoded):\n', mlt3_message)
     
-    print('\n(TODO)MLT-3 Plot:\n')
-    #plot(string_message, bit_message, mlt3_message)
+    print('\nMLT-3 Plot:\n')
+    plot_signal(mlt3_message)
 
     encrypted_message = decode_mlt3(mlt3_message)
     print('\nRecieved -> MLT-3 Decoded:\n', encrypted_message)
 
     encrypted_message_from_bits = convert_bits_to_numbers(encrypted_message)
-    print('\n(TODO em ASCII estendido)Recieved -> MLT-3 Decoded -> DeBin:\n', encrypted_message_from_bits)
+    print('\nRecieved -> MLT-3 Decoded -> DeBin:\n', encrypted_message_from_bits)
 
     bit_message = decrypt_rsa(encrypted_message_from_bits, private_key)
     print('\nRecieved -> MLT-3 Decoded -> DeBin -> Decrypted:\n', bit_message)
@@ -130,6 +129,20 @@ def decode(mlt3_message: list):
     print('\n*Recieved -> MLT-3 Decoded -> DeBin -> Decrypted -> Bin:\n', msg_bin_decrypt)
 
     write_file('decoded_message.txt', bit_message)
+
+def plot_signal(signal):
+    plt.ion()
+    
+    t = list(range(len(signal)))
+    plt.plot(t, signal, drawstyle='steps-post')
+    plt.title("MLT-3")
+    plt.xlabel("time (s)")
+    plt.grid(True)
+    plt.show()
+
+    plt.pause(0.1)
+    plt.ioff()
+
 
 class SimpleRouter(BaseHTTPRequestHandler):
     def do_POST(self):
@@ -164,28 +177,6 @@ def run_server():
     httpd = HTTPServer(server_address, SimpleRouter)
     print("Serving on port 8080")
     httpd.serve_forever()
-    
-def plot(string_input: str, bit_input: list, mlt3_input: list):
-    fig, axs = plt.subplots(3, 1, figsize=(10, 6))
-
-    # Plot the string input
-    axs[0].text(0.5, 0.5, string_input, horizontalalignment='center', verticalalignment='center', fontsize=12)
-    axs[0].set_title('String Input')
-    axs[0].axis('off')
-
-    # Plot the bit input
-    sns.lineplot(x=range(len(bit_input)), y=bit_input, ax=axs[1], drawstyle='steps-pre')
-    axs[1].set_title('Bit Input')
-    axs[1].set_ylim(-0.5, 1.5)
-
-    # Plot the MLT-3 input
-    sns.lineplot(x=range(len(mlt3_input)), y=mlt3_input, ax=axs[2], drawstyle='steps-pre')
-    axs[2].set_title('MLT-3 Input')
-    axs[2].set_ylim(-1.5, 1.5)
-
-    fig.suptitle('MLT-3 Decoding Visualization', fontsize=16)
-    plt.tight_layout()
-    plt.show()
     
 
 public_key, private_key = generate_rsa_keys(bits=8)
