@@ -74,7 +74,7 @@ def bin_to_8bit_char(bin_list: list) -> list:
     return characters
 
 def plot_signal(signal):
-    plt.ion()
+
     
     t = list(range(len(signal)))
     plt.plot(t, signal, drawstyle='steps-post')  # 'steps-post': square wave
@@ -84,7 +84,6 @@ def plot_signal(signal):
     plt.show()
 
     plt.pause(0.1)
-    plt.ioff()
 
 def send_message_to_server(message):
     response = requests.post('http://localhost:8080/receive_encrypted', data=json.dumps(message), headers={'Content-Type': 'application/json'})
@@ -112,10 +111,10 @@ def encode(message_file_path='message.txt') -> list:
     print('\nMessage -> Encrypted -> Bin -> MLT-3 Encoded:\n', mlt3_message)
 
     print('\n', end='')
-    plot_signal(mlt3_message)
 
     return mlt3_message
 
 if __name__ == "__main__":
     mlt3_message = encode('message.txt')
     send_message_to_server(mlt3_message)
+    plot_signal(mlt3_message)
